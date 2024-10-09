@@ -11,7 +11,7 @@ pub fn build(b: *std.Build) void {
             .abi = .eabi,
         },
     });
-    const optimize = .ReleaseSmall;
+    const optimize = b.standardOptimizeOption(.{});
     const elf = b.addExecutable(.{
         .name = "zig.elf",
         .root_source_file = b.path("src/main.zig"),

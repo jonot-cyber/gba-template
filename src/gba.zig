@@ -113,6 +113,9 @@ pub const obj_palettes: [*]Palette = @ptrFromInt(0x05000200);
 /// The tiles of the background
 pub const bg_tiles: [*]Tile = @ptrFromInt(0x06000000);
 
+/// BG Color in a bitmap mode
+pub const bg_colors: [*]Color = @ptrFromInt(0x06000000);
+
 /// The tiles of sprites
 pub const obj_tiles: [*]Tile = @ptrFromInt(0x06010000);
 
