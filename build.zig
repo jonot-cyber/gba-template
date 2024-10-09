@@ -1,6 +1,14 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
+    const gba_img = b.addExecutable(.{
+        .name = "gbaimg",
+        .root_source_file = b.path("tools/gbaimg.zig"),
+        .target = b.host,
+        .link_libc = true,
+    });
+    _ = gba_img;
+
     const target = b.standardTargetOptions(.{
         .default_target = .{
             .cpu_arch = .thumb,
@@ -29,23 +37,23 @@ pub fn build(b: *std.Build) void {
 
     _ = b.addInstallArtifact(elf, .{});
 
-    const objCopy = b.addObjCopy(elf.getEmittedBin(), .{
+    const obj_copy = b.addObjCopy(elf.getEmittedBin(), .{
         .format = .bin,
     });
-    objCopy.step.dependOn(&elf.step);
+    obj_copy.step.dependOn(&elf.step);
 
-    const copyBin = b.addInstallBinFile(objCopy.getOutput(), "zig.gba");
-    b.default_step.dependOn(&copyBin.step);
+    const copy_bin = b.addInstallBinFile(obj_copy.getOutput(), "zig.gba");
+    b.default_step.dependOn(&copy_bin.step);
 
     // Add a run step
-    const runStepCommand = b.addSystemCommand(&.{
+    const run_step_command = b.addSystemCommand(&.{
         "flatpak",
         "run",
         "io.mgba.mGBA",
     });
-    runStepCommand.addFileArg(objCopy.getOutput());
-    runStepCommand.step.dependOn(&objCopy.step);
+    run_step_command.addFileArg(obj_copy.getOutput());
+    run_step_command.step.dependOn(&obj_copy.step);
 
-    const runStep = b.step("run", "Run in an emulator");
-    runStep.dependOn(&runStepCommand.step);
+    const run_step = b.step("run", "Run in an emulator");
+    run_step.dependOn(&run_step_command.step);
 }
