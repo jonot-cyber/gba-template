@@ -27,7 +27,7 @@ pub fn build(b: *std.Build) void {
         .single_threaded = true,
         .link_libc = false,
         .linkage = .static,
-        .omit_frame_pointer = false,
+        .omit_frame_pointer = optimize == .ReleaseSmall,
         .use_lld = true,
     });
     elf.addAssemblyFile(b.path("src/start.s"));
