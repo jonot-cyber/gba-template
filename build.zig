@@ -7,7 +7,6 @@ pub fn build(b: *std.Build) void {
         .target = b.host,
         .link_libc = true,
     });
-    _ = gba_img;
 
     const target = b.standardTargetOptions(.{
         .default_target = .{
@@ -28,12 +27,19 @@ pub fn build(b: *std.Build) void {
         .single_threaded = true,
         .link_libc = false,
         .linkage = .static,
-        .omit_frame_pointer = true,
+        .omit_frame_pointer = false,
         .use_lld = true,
     });
     elf.addAssemblyFile(b.path("src/start.s"));
     elf.setLinkerScript(b.path("src/link.ld"));
-    elf.addIncludePath(b.path("assets/"));
+
+    const gba_img_run_test = b.addRunArtifact(gba_img);
+    gba_img_run_test.addFileArg(b.path("assets/test.png"));
+    const output_test = gba_img_run_test.addOutputFileArg("test.zig");
+    gba_img_run_test.addArg("32");
+    elf.root_module.addAnonymousImport("test", .{
+        .root_source_file = output_test,
+    });
 
     _ = b.addInstallArtifact(elf, .{});
 

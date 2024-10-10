@@ -55,9 +55,7 @@ start_vector:
     ldr     sp, =__STACK_USR_END__
     // Clear IWRAM
     mov     r0, #0x3000000
-    //ldr     r0, [r0]
     mov     r1, #(32 * 1024)
-    //ldr     r1, [r1]
     bl      mem_zero
 
     // Copy data section from ROM to RAM
@@ -94,29 +92,32 @@ start_vector:
 // r1 = Size
 mem_zero:
     mov r3, #0
+    bic r1, r1, #3
     add r1, r0, r1
 .mem_zero1:
     cmp r0, r1
     bxeq lr
-    strb r3, [r0], #1
+    str r3, [r0], #4
     b .mem_zero1
 
 // r0 = Source address
 // r1 = Destination address
 // r2 = Size
 mem_copy:
+    bic r2, r2, #3
+    sub r1, r1, #4
     add r2, r0, r2
 .mem_copy1:
     cmp r0, r2
     bxeq lr
-    ldrb r3, [r0], #1
-    strb r3, [r1], #1
+    ldr r3, [r0], #4
+    str r3, [r1, #4]!
     b .mem_copy1
-
-// r2 = Address to jump to
-blx_r2_trampoline:
-    bx      r2
-
-    .align
-    .pool
-    .end
+//mem_copy:
+//    add r2, r0, r2
+//.mem_copy1:
+//    cmp r0, r2
+//    bxeq lr
+//    ldrb r3, [r0], #1
+//    strb r3, [r1], #1
+//    b .mem_copy1

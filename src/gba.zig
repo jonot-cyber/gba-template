@@ -139,7 +139,7 @@ pub fn copyPalette(src: Palette, dst: *Palette) void {
 }
 
 /// Copy tiles from memory to VRAM.
-pub fn copyTiles(src: []Tile, dst: [*]Tile) void {
+pub fn copyTiles(src: []const Tile, dst: [*]Tile) void {
     for (src, 0..) |t, i| {
         for (t, 0..) |d, j| {
             dst[i][j] = d;

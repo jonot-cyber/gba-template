@@ -41,7 +41,7 @@ fn paletteFind(palette: []GBAColor, color: GBAColor) ?usize {
 pub fn main() !void {
     const args = try std.process.argsAlloc(std.heap.c_allocator);
 
-    if (args.len != 3) {
+    if (args.len != 4) {
         std.debug.print("wrong number of arguments.\n", .{});
         std.process.exit(1);
     }
@@ -56,6 +56,7 @@ pub fn main() !void {
     defer img.deinit(std.heap.c_allocator);
     if (@mod(img.height, 8) != 0 or @mod(img.width, 8) != 0) {
         std.debug.print("Image dimensions aren't valid.\n", .{});
+        std.process.exit(1);
     }
 
     var palette: [16]GBAColor = undefined;
@@ -83,31 +84,41 @@ pub fn main() !void {
         };
     }
 
+    const sprite_size = try std.fmt.parseInt(u8, args[3], 10);
+    if (sprite_size != 8 and sprite_size != 16 and sprite_size != 32 and sprite_size != 64) {
+        std.debug.print("Invalid sprite_size", .{});
+        std.process.exit(1);
+    }
+
     var tiles = std.ArrayList(Tile).init(std.heap.c_allocator);
     defer tiles.deinit();
-    for (0..img.height / 8) |iy| {
-        for (0..img.width / 8) |ix| {
-            var tmp: Tile = undefined;
-            for (0..8) |iy2| {
-                var row: u32 = 0;
-                for (0..8) |ix2| {
-                    const ix2_new = 7 - ix2;
-                    const idx = (((iy * 8 + iy2) * img.width) + ix * 8 + ix2_new);
-                    const color = img.pixels.rgba32[idx];
-                    const palette_idx = blk: {
-                        if (isColorTransparent(color)) {
-                            break :blk 0;
+    for (0..img.height / sprite_size) |iy_sprite| {
+        for (0..img.width / sprite_size) |ix_sprite| {
+            for (0..sprite_size / 8) |iy_tile| {
+                for (0..sprite_size / 8) |ix_tile| {
+                    var tmp: Tile = undefined;
+                    for (0..8) |iy_pixel| {
+                        var row: u32 = 0;
+                        for (0..8) |ix_pixel| {
+                            const y = iy_sprite * sprite_size + iy_tile * 8 + iy_pixel;
+                            const x = ix_sprite * sprite_size + ix_tile * 8 + (7 - ix_pixel);
+                            const idx = y * img.width + x;
+                            const color = img.pixels.rgba32[idx];
+                            const palette_idx = blk: {
+                                if (isColorTransparent(color)) {
+                                    break :blk 0;
+                                }
+                                const gba_color = colorToGBA(color);
+                                break :blk paletteFind(&palette, gba_color) orelse 0;
+                            };
+                            row <<= 4;
+                            row += @intCast(palette_idx);
                         }
-                        const gba_color = colorToGBA(color);
-                        const palette_idx = paletteFind(&palette, gba_color) orelse 0;
-                        break :blk palette_idx;
-                    };
-                    row <<= 4;
-                    row += @intCast(palette_idx);
+                        tmp[iy_pixel] = row;
+                    }
+                    try tiles.append(tmp);
                 }
-                tmp[iy2] = row;
             }
-            try tiles.append(tmp);
         }
     }
 
